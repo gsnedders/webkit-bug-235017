@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MessagePort transfer test</title>
+</head>
+<body>
+  <script>
+    // Create two workers.
+    const workerA = new Worker('./MessagePort.js');
+    const workerB = new Worker('./MessagePort.js');
+
+    // When a worker sends a message port up to the page, forward
+    // it to the other worker.
+    workerA.addEventListener('message', event => {
+      workerB.postMessage(event.data, event.ports);
+    });
+    workerB.addEventListener('message', event => {
+      workerA.postMessage(event.data, event.ports);
+    });
+
+    // Create a MessageChannel and send one port to a worker. The
+    // workers will pass this port back and forth.
+    const { port1, port2 } = new MessageChannel();
+    workerA.postMessage(port2, [port2]);
+
+    // Send messages over the MessageChannel. The messages should
+    // be received by alternate workers.
+    let i = 0;
+    (function send() {
+      port1.postMessage((i++).toString());
+      if (i < 10) {
+        setTimeout(send, 1000);
+      }
+    })();
+  </script>
+</body>
+</html>
